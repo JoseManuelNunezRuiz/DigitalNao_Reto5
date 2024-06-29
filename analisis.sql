@@ -65,3 +65,35 @@ JOIN sentimientos s ON t.id_tweet = s.id_tweet;
 
 -- 4. OBTENER ESTIMACIÓN POSITIVIDAD DÍA SIGUIENTE
 
+-- Encontrar fecha del último registro
+SET @ultima_fecha = (SELECT MAX(fecha) FROM tweets);
+
+-- Calcular sentimientos promedio, mínimo y máimo del último día disponible
+SET @promedio_sentimiento_ultimo_dia = (
+    SELECT AVG(s.sentimiento)
+    FROM tweets t
+    JOIN sentimientos s ON t.id_tweet = s.id_tweet
+    WHERE DATE(t.fecha) = (SELECT MAX(DATE(fecha)) FROM tweets)
+);
+
+SET @minimo_sentimiento_ultimo_dia = (
+    SELECT MIN(s.sentimiento)
+    FROM tweets t
+    JOIN sentimientos s ON t.id_tweet = s.id_tweet
+    WHERE DATE(t.fecha) = (SELECT MAX(DATE(fecha)) FROM tweets)
+);
+
+SET @maximo_sentimiento_ultimo_dia = (
+    SELECT MAX(s.sentimiento)
+    FROM tweets t
+    JOIN sentimientos s ON t.ide_tweet = s.id_tweet
+    WHERE DATE(t.fecha) = (SELECT MAX(DATE(fecha)) FROM tweets)
+);
+
+-- Simulación para estimar positividad día siguiente
+
+SELECT
+    DATE_ADD(@ultima_fecha, INTERVAL 1 DAY) AS fecha_prediccion,
+    @promedio_sentimiento_ultimo_dia AS sentimiento_predicho,
+    @minimo_sentimiento_ultimo_dia AS sentimiento_minimo,
+    @maximo_sentimiento_ultimo_dia AS sentimiento_maximo;
