@@ -60,3 +60,27 @@ plt.tight_layout()
 plt.show()
 
 # 2.- GRÁFICA DE NUBE DE PALABRAS CIRCULAR
+
+# 3.- SCATTERPLOT PALABRAS/SENTIMIENTO
+
+import matplotlib.pyplot as plt
+from adjustText import adjust_text
+
+# Crear un scatterplot con colores diferentes para cada punto
+plt.figure(figsize=(12, 8))
+colors = range(len(df_positivo))  # Generar una lista de colores para cada punto
+scatter = plt.scatter(df_positivo['conteo'], df_negativo['conteo'], c=colors, cmap='viridis')
+
+# Configurar los ejes y agregar etiquetas
+plt.xlabel('Frecuencia Positiva')
+plt.ylabel('Frecuencia Negativa')
+plt.title('Scatterplot de Frecuencias Positivas vs. Frecuencias Negativas')
+
+# Etiquetar cada punto con la palabra correspondiente sin superposición
+texts = [plt.text(df_positivo['conteo'].iloc[i], df_negativo['conteo'].iloc[i], word, fontsize=9) for i, word in enumerate(df_positivo['palabra'])]
+
+# Ajustar las etiquetas para evitar superposiciones
+adjust_text(texts, arrowprops=dict(arrowstyle='-', color='red'))
+
+plt.tight_layout()
+plt.show()
