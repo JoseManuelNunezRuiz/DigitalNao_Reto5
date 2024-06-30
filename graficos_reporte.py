@@ -1,10 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
-import seaborn as sns
 import mysql.connector
 from adjustText import adjust_text
-
-# 1.- CREAR GRÁFICO DE CONTEO DE SENTIMIENTOS POR PALABRA MÁS REPETIDA (ASPECTO)
+import plotly.express as px
 
 # Conexión a la base de datos
 conn = mysql.connector.connect(
@@ -14,8 +12,8 @@ conn = mysql.connector.connect(
     database='tweets_sentimientos'
 )
 
-# Consulta SQL para obtener los datos
-query = '''
+# Consulta sql para obtener los datos de sentimientos
+query_sentimientos = '''
 SELECT
     p.palabra,
     CASE
@@ -30,48 +28,10 @@ JOIN palabras_mas_repetidas p ON t.texto LIKE CONCAT('%', p.palabra, '%')
 GROUP BY p.palabra, tipo_sentimiento
 ORDER BY p.palabra, tipo_sentimiento;
 '''
+df_sentimientos = pd.read_sql(query_sentimientos, conn)
 
-# Leer los datos en un DataFrame de pandas
-df = pd.read_sql(query, conn)
-
-# Cerrar la conexión
-conn.close()
-
-# Filtrar datos por sentimiento
-df_positivo = df[df['tipo_sentimiento'] == 'positivo']
-df_negativo = df[df['tipo_sentimiento'] == 'negativo']
-df_neutral = df[df['tipo_sentimiento'] == 'neutral']
-
-# Crear gráficas de barras horizontales
-fig, axes = plt.subplots(nrows=1, ncols=3, figsize=(15, 8))
-
-df_positivo.plot(kind='barh', x='palabra', y='conteo', ax=axes[0], color='green', legend=False)
-axes[0].set_title('Positivo')
-axes[0].set_xlabel('Frecuencia')
-
-df_negativo.plot(kind='barh', x='palabra', y='conteo', ax=axes[1], color='red', legend=False)
-axes[1].set_title('Negativo')
-axes[1].set_xlabel('Frecuencia')
-
-df_neutral.plot(kind='barh', x='palabra', y='conteo', ax=axes[2], color='blue', legend=False)
-axes[2].set_title('Neutral')
-axes[2].set_xlabel('Frecuencia')
-
-plt.tight_layout()
-plt.show()
-
-# 2.- GRÁFICA DE NUBE DE PALABRAS CIRCULAR
-
-# Conexión a la base de datos
-conn = mysql.connector.connect(
-    host='localhost',
-    user='root',
-    password='my_pass',
-    database='tweets_sentimientos'
-)
-
-# Query para obtener los datos
-query = '''
+# Consulta sql para obtener los datos de frecuencia total
+query_bubble = '''
 SELECT
     p.palabra,
     COUNT(*) AS conteo_total
@@ -80,36 +40,53 @@ JOIN palabras_mas_repetidas p ON t.texto LIKE CONCAT('%', p.palabra, '%')
 GROUP BY p.palabra
 ORDER BY conteo_total DESC;
 '''
-
-# Leer datos en un dataframe de pandas
-df = pd.read_sql(query, conn)
-
-# Cerrar la conexión
+df_bubble = pd.read_sql(query_bubble, conn)
 conn.close()
 
-# Crear un gráfico de burbujas empacadas conteo general con Plotly
-fig = px.scatter(df, x='palabra', y=df.index, size='conteo_total', color='conteo_total',
-                 hover_name='palabra', size_max=50, title='Packed Bubble Chart de Frecuencia de Palabras')
-fig.update_layout(showlegend=False)
-fig.show()
+# Filtrar datos por sentimiento
+df_positivo = df_sentimientos[df_sentimientos['tipo_sentimiento'] == 'positivo']
+df_negativo = df_sentimientos[df_sentimientos['tipo_sentimiento'] == 'negativo']
+df_neutral = df_sentimientos[df_sentimientos['tipo_sentimiento'] == 'neutral']
 
-# 3.- SCATTERPLOT PALABRAS/SENTIMIENTO
+# Crear layout con todas las gráficas
+fig, axes = plt.subplots(nrows=2, ncols=3, figsize=(18, 16))
 
-# Crear un scatterplot con colores diferentes para cada punto
-plt.figure(figsize=(12, 8))
-colors = range(len(df_positivo))  # Generar una lista de colores para cada punto
-scatter = plt.scatter(df_positivo['conteo'], df_negativo['conteo'], c=colors, cmap='viridis')
+# Gráficas de barras horizontales
+df_positivo.plot(kind='barh', x='palabra', y='conteo', ax=axes[0, 0], color='green', legend=False)
+axes[0, 0].set_title('Positivo')
+axes[0, 0].set_xlabel('Frecuencia')
 
-# Configurar ejes y etiquetas
-plt.xlabel('Frecuencia Positiva')
-plt.ylabel('Frecuencia Negativa')
-plt.title('Scatterplot de Frecuencias Positivas vs. Frecuencias Negativas')
+df_negativo.plot(kind='barh', x='palabra', y='conteo', ax=axes[0, 1], color='red', legend=False)
+axes[0, 1].set_title('Negativo')
+axes[0, 1].set_xlabel('Frecuencia')
 
-# Etiquetar puntos con palabra correspondiente sin superposición
-texts = [plt.text(df_positivo['conteo'].iloc[i], df_negativo['conteo'].iloc[i], word, fontsize=9) for i, word in enumerate(df_positivo['palabra'])]
+df_neutral.plot(kind='barh', x='palabra', y='conteo', ax=axes[0, 2], color='blue', legend=False)
+axes[0, 2].set_title('Neutral')
+axes[0, 2].set_xlabel('Frecuencia')
 
-# Ajustar las etiquetas para evitar superposiciones
+# Gráfico de burbujas empacadas
+bubble_fig = px.scatter(df_bubble, x='palabra', y=df_bubble.index, size='conteo_total', color='conteo_total',
+                        hover_name='palabra', size_max=50, title='Packed Bubble Chart de Frecuencia de Palabras')
+bubble_fig.update_layout(showlegend=False)
+bubble_fig.show()
+
+# Scatterplot de frecuencias positivas vs. negativas
+plt.sca(axes[1, 0])  # Seleccionar el subplot para el scatterplot
+scatter = axes[1, 0].scatter(df_positivo['conteo'], df_negativo['conteo'], c='blue', alpha=0.5)
+
+axes[1, 0].set_xlabel('Frecuencias Positivas')
+axes[1, 0].set_ylabel('Frecuencias Negativas')
+axes[1, 0].set_title('Scatterplot de Frecuencias Positivas vs. Frecuencias Negativas')
+
+# Etiquetar puntos del scatter
+texts = [axes[1, 0].text(df_positivo['conteo'].iloc[i], df_negativo['conteo'].iloc[i],
+                         df_positivo['palabra'].iloc[i], fontsize=9)
+         for i in range(len(df_positivo))]
 adjust_text(texts, arrowprops=dict(arrowstyle='-', color='red'))
+
+# Ajustar el diseño para el subplot vacío
+axes[1, 1].axis('off')
+axes[1, 2].axis('off')
 
 plt.tight_layout()
 plt.show()
