@@ -10,7 +10,7 @@ from adjustText import adjust_text
 conn = mysql.connector.connect(
     host='localhost',
     user='root',
-    password='timeseason',
+    password='my_pass',
     database='tweets_sentimientos'
 )
 
@@ -62,6 +62,37 @@ plt.show()
 
 # 2.- GRÁFICA DE NUBE DE PALABRAS CIRCULAR
 
+# Conexión a la base de datos
+conn = mysql.connector.connect(
+    host='localhost',
+    user='root',
+    password='my_pass',
+    database='tweets_sentimientos'
+)
+
+# Query para obtener los datos
+query = '''
+SELECT
+    p.palabra,
+    COUNT(*) AS conteo_total
+FROM tweets t
+JOIN palabras_mas_repetidas p ON t.texto LIKE CONCAT('%', p.palabra, '%')
+GROUP BY p.palabra
+ORDER BY conteo_total DESC;
+'''
+
+# Leer datos en un dataframe de pandas
+df = pd.read_sql(query, conn)
+
+# Cerrar la conexión
+conn.close()
+
+# Crear un gráfico de burbujas empacadas conteo general con Plotly
+fig = px.scatter(df, x='palabra', y=df.index, size='conteo_total', color='conteo_total',
+                 hover_name='palabra', size_max=50, title='Packed Bubble Chart de Frecuencia de Palabras')
+fig.update_layout(showlegend=False)
+fig.show()
+
 # 3.- SCATTERPLOT PALABRAS/SENTIMIENTO
 
 # Crear un scatterplot con colores diferentes para cada punto
@@ -69,12 +100,12 @@ plt.figure(figsize=(12, 8))
 colors = range(len(df_positivo))  # Generar una lista de colores para cada punto
 scatter = plt.scatter(df_positivo['conteo'], df_negativo['conteo'], c=colors, cmap='viridis')
 
-# Configurar los ejes y agregar etiquetas
+# Configurar ejes y etiquetas
 plt.xlabel('Frecuencia Positiva')
 plt.ylabel('Frecuencia Negativa')
 plt.title('Scatterplot de Frecuencias Positivas vs. Frecuencias Negativas')
 
-# Etiquetar cada punto con la palabra correspondiente sin superposición
+# Etiquetar puntos con palabra correspondiente sin superposición
 texts = [plt.text(df_positivo['conteo'].iloc[i], df_negativo['conteo'].iloc[i], word, fontsize=9) for i, word in enumerate(df_positivo['palabra'])]
 
 # Ajustar las etiquetas para evitar superposiciones
