@@ -2,6 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 import mysql.connector
+from adjustText import adjust_text
 
 # 1.- CREAR GRÁFICO DE CONTEO DE SENTIMIENTOS POR PALABRA MÁS REPETIDA (ASPECTO)
 
@@ -62,9 +63,6 @@ plt.show()
 # 2.- GRÁFICA DE NUBE DE PALABRAS CIRCULAR
 
 # 3.- SCATTERPLOT PALABRAS/SENTIMIENTO
-
-import matplotlib.pyplot as plt
-from adjustText import adjust_text
 
 # Crear un scatterplot con colores diferentes para cada punto
 plt.figure(figsize=(12, 8))
