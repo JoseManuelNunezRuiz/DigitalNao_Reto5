@@ -56,6 +56,47 @@ def insertar_sentimiento(cursor, id_tweet, sentimiento):
         logger.error(f"Error al insertar el sentimiento: {err}")
         cursor.execute("ROLLBACK")  # Realizar rollback en caso de error
 
+def limpiar_texto(texto):
+    # Eliminar puntuación
+    texto_limpio = re.sub(r'[^\w\s]', '', texto)
+    # Eliminar hashtags
+    texto_limpio = re.sub(r'#\w+', '', texto_limpio)
+    # Eliminar usuarios
+    texto_limpio = re.sub(r'@\w+', '', texto_limpio)
+    # Abreviaturas comunes
+    abreviaturas = {
+        "gral.": "general",
+        "dr.": "doctor",
+        "ej.": "ejemplo",
+        "núm.": "número",
+        "prof": "profesor",
+        "tl": "línea de tiempo",
+        "q": "que",
+        "x": "por",
+        "xfa": "por favor",
+        "pls": "por favor",
+        "xq": "porque",
+        "salu2": "saludos",
+        "mñn": "mañana",
+        "lol": "risa",
+        "lmao": "muy gracioso",
+        "btw": "por cierto",
+        "jk": "es broma",
+        "brb": "ahorita vuelvo",
+        "tbh": "para ser honesto",
+        "idk": "no sé",
+        "asap": "lo más pronto posible",
+        "f": 'condolencias',
+        "pdt": "posdata",
+        "dsd": "desde",
+        "cc": "como cuando",
+    }
+    for abreviatura, expansion in abreviaturas.items():
+        texto_limpio = re.sub(r'\b' + abreviatura + r'\b', expansion, texto_limpio)
+    # Eliminar espacios adicionales
+    texto_limpio = ' '.join(texto_limpio.split())
+    return texto_limpio
+
 try:
     # Conectar a la base de datos
     db_conn = conectar_base_datos()
